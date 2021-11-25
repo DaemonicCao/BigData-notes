@@ -17,6 +17,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#51-shuffle介绍">5.1 shuffle介绍</a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#52-Shuffle的影响">5.2 Shuffle的影响</a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#53-导致Shuffle的操作">5.3 导致Shuffle的操作</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#54-spark Shuffle和MR Shuffle的区别">5.4 spark Shuffle和MR Shuffle的区别</a><br/> 
 <a href="#五宽依赖和窄依赖">五、宽依赖和窄依赖</a><br/>
 <a href="#六DAG的生成">六、DAG的生成</a><br/>
 </nav>
@@ -192,7 +193,46 @@ Shuffle 是一项昂贵的操作，因为它通常会跨节点操作数据，这
 + **所有涉及到 ByKey 的操作**：如 `groupByKey` 和 `reduceByKey`，但 `countByKey` 除外；
 + **联结操作**：如 `cogroup` 和 `join`。
 
+### spark Shuffle和MR Shuffle的区别
+Hadoop Shuffle:通过Map端处理的数据到Reduce端的中间的过程就是Shuffle.
 
+Spark Shuffle:在DAG调度过程中,stage阶段的划分是根据shuffle过程,也就是存在ShuffleDependency宽窄依赖的时候,需要进行shuffle,(这时候会将作业Job划分成多个stage;并且在划分stage的时候,构建shuffleDependency的时候进行shuffle注册,获取后续数据读取所需要的shuffleHandle),最终每一个Job提交后都会生成一个ResultStage和若干个ShuffleMapStage.
+
+shuffle过程排序次数不同
+
+Hadoop Shuffle过程中总共发生3次排序,详细分别如下:
+
+第一次排序行为:在map阶段,由环形缓冲区溢出到磁盘上时,落地磁盘的文件会按照key进行分区和排序,属于分区内有序,排序算法为快速排序.
+
+第二次排序行为:在map阶段,对溢出的文件进行combiner合并过程中,需要对溢出的小文件进行归档排序,合并,排序算法为归并排序.
+
+第三次排序行为:在map阶段,reduce task将不同map task端文件拉取到同一个reduce分区后,对文件进行合并,排序,排序算法为归并排序.
+
+spark shuffle过程在满足shuffle manager为sortshuffleManager,且运行模式为普通模式的情况下才会发生排序行为,排序行为发生在数据结构中保存数据内存达到阀值,再溢出磁盘文件之前会对内存数据结构中数据进行排序;
+
+spark中sorted-Based Shuffle在Mapper端是进行排序的,包括partition的排序和每个partition内部元素进行排序,但是在Reducer端没有进行排序,所有job的结果默认情况下不是排序的.Sprted-Based Shuffle 采用 Tim-Sort排序算法,好处是可以极为高效的使用Mapper端的排序成果完成全局排序.
+
+shuffle 逻辑流划分
+
+Hadoop是基于文件的数据结构，Spark是基于RDD的数据结构,计算性能要比Hadoop要高。
+
+Shuffle Fetch后数据存放位置
+
+Hadoopreduce 端将 map task 的文件拉取到同一个reduce分区,是将文件进行归并排序,合并,将文件直接保存在磁盘上。
+
+SparkShuffle Read 拉取来的数据首先肯定是放在Reducer端的内存缓存区中的,现在的实现都是内存+磁盘的方式(数据结构使用 ExternalAppendOnlyMap),当然也可以通过Spark.shuffle.spill=false来设置只能使用内存.使用ExternalAppendOnlyMap的方式时候如果内存的使用达到一定临界值,会首先尝试在内存中扩大ExternalAppendOnlyMap(内部有实现算法),如果不能扩容的话才会spil到磁盘.
+
+什么时候进行Shuffle Fetch操作
+
+Hadoop Shuffle把数据拉过来之后,然后进行计算，如果用MapReduce求平均值的话,它的算法就会很好实现。Spark Shuffle的过程是边拉取数据边进行Aggregrate操作。
+
+Fetch操作与数据计算粒度
+
+Hadoop的MapReduce是粗粒度的，Hadoop Shuffle Reducer Fetch 到的数据record先暂时被存放到Buffer中,当Buffer快满时才进行combine()操作。Spark的Shuffle Fetch是细粒度的,Reducer是对Map端数据Record边拉取边聚合。
+
+性能优化的角度
+
+Hadoop MapReduce的shuffle方式单一.Spark针对不同类型的操作，不同类型的参数,会使用不同的shuffle write方式;而spark更加全面。
 
 ## 五、宽依赖和窄依赖
 
