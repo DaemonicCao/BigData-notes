@@ -193,7 +193,7 @@ Shuffle 是一项昂贵的操作，因为它通常会跨节点操作数据，这
 + **所有涉及到 ByKey 的操作**：如 `groupByKey` 和 `reduceByKey`，但 `countByKey` 除外；
 + **联结操作**：如 `cogroup` 和 `join`。
 
-### spark Shuffle和MR Shuffle的区别
+### 5.4 spark Shuffle和MR Shuffle的区别
 Hadoop Shuffle:通过Map端处理的数据到Reduce端的中间的过程就是Shuffle.
 
 Spark Shuffle:在DAG调度过程中,stage阶段的划分是根据shuffle过程,也就是存在ShuffleDependency宽窄依赖的时候,需要进行shuffle,(这时候会将作业Job划分成多个stage;并且在划分stage的时候,构建shuffleDependency的时候进行shuffle注册,获取后续数据读取所需要的shuffleHandle),最终每一个Job提交后都会生成一个ResultStage和若干个ShuffleMapStage.
