@@ -17,7 +17,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#51-shuffle介绍">5.1 shuffle介绍</a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#52-Shuffle的影响">5.2 Shuffle的影响</a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#53-导致Shuffle的操作">5.3 导致Shuffle的操作</a><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#54-spark Shuffle和MR Shuffle的区别">5.4 spark Shuffle和MR Shuffle的区别</a><br/> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#54-spark Shuffle和Hadoop Shuffle的区别">5.4 spark Shuffle和Hadoop Shuffle的区别</a><br/> 
 <a href="#五宽依赖和窄依赖">五、宽依赖和窄依赖</a><br/>
 <a href="#六DAG的生成">六、DAG的生成</a><br/>
 </nav>
